@@ -1,0 +1,42 @@
+---
+
+- name: create a user with password, home folder, ssh key
+  hosts: my_servers
+  become: yes
+    
+  tasks:
+   - name: Create a login user with password, make it sudo and create a home folder
+     user:
+      name: ansible
+      password: '$6$F4NWXRFtSdCi8$DsB5vvMJYusQhSbvGXrYDXL6Xj37MUuqFCd4dGXdKd6NyxT3lpdELN07/Kpo7EjjWnm9zusFg/LLFv6oc.ynu/'
+      groups: sudo
+      state: present
+      shell: /bin/bash
+      system: no 
+      createhome: yes 
+      home: /home/ansible
+  
+   - name: Create the .ssh folder in the home folder of the user , set the owner and group and permissions for the folder so only the ansible user can access it
+     file:
+       path: /home/ansible/.ssh
+       state: directory
+       owner: ansible
+       group: ansible
+       mode: 700
+
+   - name: Create the authorized key file in the .ssh folder 
+     file:
+       path: /home/ansible/.ssh/authorized_keys
+       state: touch
+
+   - name: Place there the public key
+     ansible.builtin.copy:
+       src: /home/ana95/Pictures/Ansible/public_key
+       dest: /home/ansible/.ssh/authorized_keys
+
+   - name: Deactivate the user password for running commands as root
+     lineinfile:
+       dest: /etc/sudoers
+       state: present
+       regexp: '^%ansible'
+       line: 'ansible ALL=(ALL) NOPASSWD: ALL'
